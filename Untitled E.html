@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Recipe guide</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 16px;
+      max-width: 480px;
+      margin: auto;
+    }
+    label { display: block; margin-top: 8px; }
+    select, input[type="checkbox"] { margin-top: 4px; }
+    select { width: 100%; padding: 4px; }
+    .row { margin-top: 12px; }
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      white-space: normal; /* ← innerHTML＋<br>用に変更 */
+    }
+    h2 {
+      margin-bottom: 0;
+    }
+    .notice {
+      color: #d93025;
+      font-size: 0.75rem;
+      margin-top: 2px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .protip-body {
+      margin: 0 0 8px 1em; /* Pro tips 本文だけ少し字下げ */
+    }
+  </style>
+</head>
+<body>
+  <h2>Recipe guide</h2>
+  <p class="notice">
+    *This tool does not support coffees reaching the second crack.
+  </p>
+
+  <!-- Roast -->
+  <div class="row">
+    <label>Roast level</label>
+    <select id="roast">
+      <option value="L">Lighter (Agtron 95~85)</option>
+      <option value="M">Medium (Agtron 85~75)</option>
+      <option value="D">Darker (Agtron 75~65)</option>
+    </select>
+  </div>
+
+  <!-- Grinder -->
+  <div class="row">
+    <label>Grinder</label>
+    <select id="grind">
+      <option value="F">Low fines (Brew-only burrs, Low RPM/Feed rate setting)</option>
+      <option value="N">Standard</option>
+      <option value="G">High fines (worn out burrs, ceramic burrs)</option>
+    </select>
+  </div>
+
+  <!-- preference -->
+  <div class="row">
+    <label>Body preference</label>
+    <select id="strength">
+      <option value="S">Lighter</option>
+      <option value="B" selected>Standard</option>
+      <option value="R">Heavier</option>
+    </select>
+  </div>
+
+  <!-- ferment check -->
+  <div class="row">
+    <label>
+      <input type="checkbox" id="strongFerment">
+      Heavily processed/fermented
+    </label>
+  </div>
+
+  <div class="row">
+    <button onclick="calcRecipe()">Show recipe</button>
+  </div>
+
+  <div class="result" id="result">Select the parameters</div>
+
+  <details style="margin-top: 8px;">
+    <summary><strong>Pro tips</strong></summary>
+    <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.4;">
+      <h4 style="margin: 0 0 4px;">Targeting EY</h4>
+      <ul style="margin: 0 0 8px 1.2em; padding: 0;">
+        <li>Lighter roasts: 19–23% EY</li>
+        <li>Medium roasts: 17–21% EY</li>
+        <li>Darker roasts: 15–19% EY</li>
+      </ul>
+
+      <h4 style="margin: 8px 0 4px;">What sets the target EY</h4>
+      <p class="protip-body">
+        Determining the target EY is primarily based on the roast degree, and the production of fines
+        should be counted as a factor shifting the target EY up or down (fewer fines raise the target EY).
+      </p>
+      <p class="protip-body">
+        Factors such as brew-only burr geometry, lower RPM, and lower feed rate are generally considered
+        to reduce fines, and the opposite is also true.
+      </p>
+
+      <h4 style="margin: 8px 0 4px;">Water for lighter roasts</h4>
+      <p class="protip-body">
+        Lighter roasts are better suited to relatively harder water (80–120 ppm), with KH at roughly
+        40–60% of the GH reading.
+      </p>
+
+      <h4 style="margin: 8px 0 4px;">Dialing in</h4>
+      <p class="protip-body">
+        Once you set the target EY, adjust the grind setting and brew temperature to achieve the desired brew.
+      </p>
+      <p class="protip-body">
+        If you modify the textural characteristics, explore different extraction dynamics by changing the
+        pouring speed (essentially combined with the grind setting), commonly described as percolation vs immersion—in
+        other words, a finer grind with a higher flow rate / higher water level in the dripper vs a coarser
+        grind with a slower flow rate / lower water level.
+      </p>
+
+      <h4 style="margin: 8px 0 4px;">Comparing profiles</h4>
+      <p class="protip-body" style="margin-bottom: 0;">
+        Make sure that the brew ratio and extraction yield are the same when comparing how different
+        extraction dynamics affect the sensorial experience.
+      </p>
+    </div>
+  </details>
+
+  <script>
+    // ratio_mid テーブル
+    const ratioTable = {
+      // L (Agtron95~85)
+      "L_F_S": 19.5, "L_F_B": 18.7, "L_F_R": 17.9,
+      "L_N_S": 18.2, "L_N_B": 17.4, "L_N_R": 16.6,
+      "L_G_S": 16.8, "L_G_B": 16.1, "L_G_R": 15.4,
+
+      // M (Agtron85~75)
+      "M_F_S": 17.7, "M_F_B": 16.9, "M_F_R": 16.2,
+      "M_N_S": 16.4, "M_N_B": 15.6, "M_N_R": 15.0,
+      "M_G_S": 15.0, "M_G_B": 14.3, "M_G_R": 13.7,
+
+      // D (Agtron75~65)
+      "D_F_S": 16.8, "D_F_B": 16.0, "D_F_R": 15.4,
+      "D_N_S": 14.5, "D_N_B": 13.9, "D_N_R": 13.3,
+      "D_G_S": 13.2, "D_G_B": 12.6, "D_G_R": 12.0
+    };
+
+    // Brew time table（Av）
+    const brewTimeTable = {
+      "L": 180, // 3:00
+      "M": 150, // 2:30
+      "D": 120  // 2:00
+    };
+
+    // Recommended temp
+    const tempBaseTable = {
+      "L": "High(93〜98℃)",
+      "M": "Mid(88〜93℃)",
+      "D": "Low(85〜90℃)"
+    };
+
+    function secToMMSS(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m + ":" + String(s).padStart(2, '0');
+    }
+
+    function calcRecipe() {
+      const roast    = document.getElementById('roast').value;
+      const grind    = document.getElementById('grind').value;
+      const strength = document.getElementById('strength').value;
+      const strongFerment = document.getElementById('strongFerment').checked;
+
+      const key = roast + "_" + grind + "_" + strength;
+      const ratio = ratioTable[key];
+
+      if (!ratio) {
+        document.getElementById('result').innerText = "No recipes found for this combination.";
+        return;
+      }
+
+      // Fixed water volume 250 
+      const water = 250;
+
+      // Standard coffee dose = 250 / ratio_mid
+      let doseRaw = water / ratio;
+
+      // For heavily fermented beans, increase the dose by 7%
+      if (strongFerment) {
+        doseRaw *= 1.07;
+      }
+
+      let dose = Math.round(doseRaw * 10) / 10; // One decimal place
+
+      // Displayed Brew Ratio（1:xx）
+      const brewRatio = (water / dose).toFixed(1);
+
+      const centerSec = brewTimeTable[roast] || 180;
+      const minSec = centerSec - 30;
+      const maxSec = centerSec + 30;
+      const timeRangeStr = secToMMSS(minSec) + "〜" + secToMMSS(maxSec);
+
+      // Temperature Range: Lower by one level for heavily fermented beans.
+      let tempStr;
+      if (strongFerment) {
+        if (roast === "L")      tempStr = tempBaseTable["M"];
+        else if (roast === "M") tempStr = tempBaseTable["D"];
+        else                    tempStr = tempBaseTable["D"];
+      } else {
+        tempStr = tempBaseTable[roast] || "90〜95℃ 目安";
+      }
+
+      // ferment時の「短め推奨」ラベル
+      const fermentNote = strongFerment
+        ? ' <span class="notice">* Shorter side recommended</span>'
+        : '';
+
+      const msgHtml =
+        "Coffee: " + dose + "g<br>" +
+        "water: 250g<br>" +
+        "Brew ratio: 1:" + brewRatio + "<br>" +
+        "Brew time: " + timeRangeStr + fermentNote + "<br>" +
+        "Brew temp: " + tempStr + "<br><br>" +
+        "Adjust the grind size based on the extraction time.<br>" +
+        "finer if the flow is too fast, and coarser if it's too slow.";
+
+      const resultEl = document.getElementById('result');
+      resultEl.innerHTML = msgHtml;
+    }
+  </script>
+</body>
+</html>
