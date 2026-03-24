@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+　<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recipe guide</title>
   <style>
     body {
@@ -35,6 +35,10 @@
     .protip-body {
       margin: 0 0 8px 1em; /* Pro tips 本文だけ少し字下げ */
     }
+button#showRecipe {
+  display: block;
+  margin: 16px auto;
+}
   </style>
 </head>
 <body>
@@ -82,7 +86,7 @@
   </div>
 
   <div class="row">
-    <button onclick="calcRecipe()">Show recipe</button>
+    <button id="showRecipe" onclick="calcRecipe()">Show recipe</button>
   </div>
 
   <div class="result" id="result">Select the parameters</div>
